@@ -3,7 +3,7 @@
 TP-Link makes decent, inexpensive cable modems. [Here’s](https://www.evuraan.info/evuraan/stuff/TP-Link_Cable_Modem_Reboot_with_Python3.html) a python script I had put together a while back, to reboot the Cable Modem.
 Recently, I got an email requesting compiled binaries that does the same. I see their point too; for example, there are IoT devices that may not have Python. Or, there could be users who don't want to install the required modules, or, even folks who are on Microsoft Windows. 
 
-I had some spare time to tinker on. So, [here](https://github.com/evuraan/reboot_modem/tree/master/bin) are the pre-compiled binaries for various Linux, Windows architectures.  
+I had some spare time to tinker on. So, [here](https://github.com/evuraan/Utility-to-Reboot-TP-Link-Cable-Modem/tree/master/bin) are the pre-compiled binaries for various Linux, Windows architectures.  
 
 Download the one appropriate for your setup, and keep rebooting your TP Link Cable Modems as you desire! 
 
