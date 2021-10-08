@@ -21,17 +21,18 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/net/publicsuffix"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 const (
-	Ver     = "1.0g"
+	Ver     = "2.01a"
 	Version = "tc7610 rebooter " + Ver
 )
 
@@ -51,18 +52,19 @@ func main() {
 	if argc == 1 {
 		fmt.Println("Assuming default address and credentials")
 	} else if argc > 1 {
-		for i, arg := range os.Args {
-			if arg == "help" || arg == "--help" || arg == "h" || arg == "--h" || arg == "-h" || arg == "-help" || arg == "?" {
+		for i := range os.Args {
+			arg := os.Args[i]
+			if strings.Contains(arg, "help") || arg == "h" || arg == "--h" || arg == "-h" || arg == "?" {
 				showhelp()
 				os.Exit(0)
 			}
 
-			if arg == "version" || arg == "--version" || arg == "v" || arg == "--v" || arg == "-v" || arg == "-version" {
+			if strings.Contains(arg, "version") || arg == "v" || arg == "--v" || arg == "-v" {
 				fmt.Println("Version:", Version)
 				os.Exit(0)
 			}
 
-			if arg == "ip" || arg == "--ip" || arg == "ip" || arg == "--ip" || arg == "-ip" || arg == "-ip" {
+			if strings.Contains(arg, "ip") {
 				next := i + 1
 				if argc > next {
 					ip = os.Args[next]
@@ -74,7 +76,7 @@ func main() {
 			}
 
 			//	if arg == "port" || arg == "--port" || arg == "p" || arg == "--p" || arg == "-p" || arg == "-port" {
-			if arg == "user" || arg == "--user" || arg == "u" || arg == "--u" || arg == "-u" || arg == "-user" {
+			if strings.Contains(arg, "user") || arg == "u" || arg == "--u" || arg == "-u" {
 				next := i + 1
 				if argc > next {
 					user = os.Args[next]
@@ -85,7 +87,7 @@ func main() {
 				}
 			}
 
-			if arg == "password" || arg == "--password" || arg == "p" || arg == "--p" || arg == "-p" || arg == "-password" {
+			if strings.Contains(arg, "password") || arg == "p" || arg == "--p" || arg == "-p" {
 				next := i + 1
 				if argc > next {
 					password = os.Args[next]
@@ -122,28 +124,35 @@ func main() {
 		"data":          {meh},
 	}
 
-	r, _ := http.NewRequest("POST", login_url, strings.NewReader(data.Encode()))
+	r, err := http.NewRequest("POST", login_url, strings.NewReader(data.Encode()))
+	fatalErr(err)
 	r.Header.Add("user-agent", "")
 	r.Header.Add("Referer", Referer)
 	doReq, err := client.Do(r)
+	fatalErr(err)
+	r.Close = true
 
-	if err != nil || doReq.StatusCode != 200 {
+	if doReq.StatusCode != http.StatusOK {
 		fmt.Println("\nError during post", err)
 		os.Exit(1)
 	}
-
-	reboot, _ := http.NewRequest("POST", rebooturl, strings.NewReader(data.Encode()))
+	defer r.Body.Close()
+	reboot, err := http.NewRequest("POST", rebooturl, strings.NewReader(data.Encode()))
+	fatalErr(err)
+	reboot.Close = true
 	reboot.Header.Add("user-agent", "")
 	reboot.Header.Add("Referer", Referer)
 	doReboot, err := client.Do(reboot)
 
-	if err != nil || doReboot.StatusCode != 200 {
-		fmt.Println("Error during reboot", err)
-		os.Exit(1)
-	} else {
-		fmt.Println("Reboot Success!")
-	}
+	fatalErr(err)
 
+	if doReboot.StatusCode != http.StatusOK {
+		fmt.Println("\nError during post", err)
+		os.Exit(1)
+	}
+	defer reboot.Body.Close()
+
+	fmt.Println("Reboot Success!")
 }
 
 func showhelp() {
@@ -153,4 +162,11 @@ func showhelp() {
 	fmt.Println("  -u   --user         username to use")
 	fmt.Println("  -p   --password     password to use")
 	fmt.Println("  -v   --version      print version information and exit")
+}
+
+func fatalErr(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "err: %v\n", err)
+		os.Exit(1)
+	}
 }
